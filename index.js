@@ -10,7 +10,7 @@ app.use(
     origin: [
       "http://localhost:5174",
       "http://localhost:5173",
-      "https://hive-23537.web.app",
+      "https://product-hunt-beta.vercel.app",
     ],
     credentials: true,
   })
