@@ -30,6 +30,54 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     const ProductCollection = client.db("hive").collection("ProductCollection");
+    app.get('/products', async (req, res) => {
+        try {
+          const { search, brand, category, priceRange, sort, page = 1 } = req.query;
+          const limit = 10;
+          const skip = (page - 1) * limit;
+      
+          let query = {};
+          if (search) {
+            query.name = { $regex: search, $options: 'i' };
+          }
+          if (brand) {
+            query.brand = brand;
+          }
+          if (category) {
+            query.category = category;
+          }
+          if (priceRange) {
+            const [min, max] = priceRange.split('-').map(Number);
+            query.price = { $gte: min, $lte: max };
+          }
+      
+          let sortQuery = {};
+          if (sort) {
+            if (sort === 'price-asc') {
+              sortQuery.price = 1;
+            } else if (sort === 'price-desc') {
+              sortQuery.price = -1;
+            } else if (sort === 'date-desc') {
+              sortQuery.dateAdded = -1;
+            }
+          }
+      
+          const totalProducts = await ProductCollection.countDocuments(query);
+          const products = await ProductCollection.find(query)
+            .sort(sortQuery)
+            .skip(skip)
+            .limit(limit)
+            .toArray();
+      
+          res.json({
+            products,
+            totalPages: Math.ceil(totalProducts / limit),
+          });
+        } catch (error) {
+          res.status(500).send('Error fetching products');
+        }
+      });
+      
   } finally {
     // await client.close();
   }
